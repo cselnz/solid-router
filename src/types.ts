@@ -44,6 +44,10 @@ export interface RouterIntegration {
   utils?: Partial<RouterUtils>;
 }
 
+export interface RouterIntegrationOptions {
+  block: RouterUtils["block"];
+}
+
 export interface RouteDataFuncArgs<T = unknown> {
   data: T extends RouteDataFunc ? ReturnType<T> : T;
   params: Params;
@@ -86,7 +90,7 @@ export interface OutputMatch {
 }
 
 export interface Route {
-  key: unknown,
+  key: unknown;
   originalPath: string;
   pattern: string;
   element: () => JSX.Element;
