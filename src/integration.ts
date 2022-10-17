@@ -94,7 +94,7 @@ export function staticIntegration(obj: LocationChange): RouterIntegration {
 
 let depth: number;
 function saveCurrentDepth() {
-  if (!history.state || !history.state._depth == null) {
+  if (!history.state || history.state._depth == null) {
     history.replaceState({ ...history.state, _depth: history.length - 1 }, "", location.href);
   }
   depth = history.state._depth;

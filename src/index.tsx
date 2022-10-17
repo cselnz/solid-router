@@ -24,6 +24,7 @@ export type {
   RouteDataFuncArgs,
   RouteDefinition,
   RouterIntegration,
+  RouterIntegrationOptions,
   RouterOutput,
   RouterUtils,
   SetParams
