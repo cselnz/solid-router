@@ -1,6 +1,6 @@
 /*@refresh skip*/
 
-import type { Component, JSX } from "solid-js";
+import type { Accessor, Component, JSX } from "solid-js";
 import { children, createMemo, createRoot, mergeProps, on, Show, splitProps } from "solid-js";
 import { isServer } from "solid-js/web";
 import { pathIntegration, staticIntegration } from "./integration";
@@ -70,6 +70,7 @@ export const Router = (props: RouterProps) => {
 export interface RoutesProps {
   base?: string;
   children: JSX.Element;
+  location?: Accessor<string>;
 }
 
 export const Routes = (props: RoutesProps) => {
@@ -82,7 +83,7 @@ export const Routes = (props: RoutesProps) => {
   const branches = createMemo(() =>
     createBranches(routeDefs(), joinPaths(parentRoute.pattern, props.base || ""), Outlet)
   );
-  const matches = createMemo(() => getRouteMatches(branches(), router.location.pathname));
+  const matches = createMemo(() => getRouteMatches(branches(), props.location ? props.location() : router.location.pathname));
 
   if (router.out) {
     router.out.matches.push(
