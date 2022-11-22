@@ -1,4 +1,6 @@
 import { createSignal, onCleanup } from "solid-js";
+import { isServer } from "solid-js/web";
+import { createBeforeLeave } from "./lifecycle";
 import type { LocationChange, LocationChangeSignal, RouterIntegration, RouterUtils } from "./types";
 
 function bindEvent(target: EventTarget, type: string, handler: EventListener) {
@@ -85,12 +87,51 @@ export function staticIntegration(obj: LocationChange): RouterIntegration {
   };
 }
 
+let depth: number;
+function saveCurrentDepth() {
+  if (!window.history.state || window.history.state._depth == null) {
+    window.history.replaceState({ ...window.history.state, _depth: window.history.length - 1 }, "");
+  }
+  depth = window.history.state._depth;
+}
+if (!isServer) {
+  saveCurrentDepth();
+}
+const keepDepth = (state: any) => ({
+  ...state,
+  _depth: window.history.state && window.history.state._depth
+});
+
+function notifyIfNotBlocked(
+  notify: (value?: string | LocationChange) => void,
+  block: (delta: number | null) => boolean
+) {
+  let ignore = false;
+  return () => {
+    const prevDepth = depth;
+    saveCurrentDepth();
+    const delta = prevDepth == null ? null : depth - prevDepth;
+    if (ignore) {
+      ignore = false;
+      return;
+    }
+    if (delta && block(delta)) {
+      ignore = true;
+      window.history.go(-delta);
+    } else {
+      notify();
+    }
+};
+}
+
 export function pathIntegration() {
+  const getSource = () => ({
+    value: window.location.pathname + window.location.search + window.location.hash,
+    state: window.history.state
+  });
+  const beforeLeave = createBeforeLeave();
   return createIntegration(
-    () => ({
-      value: window.location.pathname + window.location.search + window.location.hash,
-      state: history.state
-    }),
+    getSource,
     ({ value, replace, scroll, state }) => {
       if (replace) {
         window.history.replaceState(state, "", value);
@@ -98,28 +139,56 @@ export function pathIntegration() {
         window.history.pushState(state, "", value);
       }
       scrollToHash(window.location.hash.slice(1), scroll);
+      saveCurrentDepth()
     },
-    notify => bindEvent(window, "popstate", () => notify()),
+    notify =>
+      bindEvent(
+        window,
+        "popstate",
+        notifyIfNotBlocked(notify, (delta) => {
+          if (delta && delta < 0) {
+            return !beforeLeave.confirm(delta);
+          } else {
+            const s = getSource();
+            return !beforeLeave.confirm(s.value, { state: s.state });
+          }
+        })
+      ),
     {
-      go: delta => window.history.go(delta)
+      go: delta => window.history.go(delta),
+      beforeLeave
     }
   );
 }
 
 export function hashIntegration() {
+  const getSource = () => window.location.hash.slice(1);
+  const beforeLeave = createBeforeLeave();
   return createIntegration(
-    () => window.location.hash.slice(1),
+    getSource,
     ({ value, replace, scroll, state }) => {
       if (replace) {
-        window.history.replaceState(state, "", "#" + value);
+        window.history.replaceState(keepDepth(state), "", "#" + value);
       } else {
         window.location.hash = value;
       }
       const hashIndex = value.indexOf("#");
       const hash = hashIndex >= 0 ? value.slice(hashIndex + 1) : "";
       scrollToHash(hash, scroll);
+      saveCurrentDepth()
     },
-    notify => bindEvent(window, "hashchange", () => notify()),
+    notify =>
+      bindEvent(
+        window,
+        "hashchange",
+        notifyIfNotBlocked(notify, (delta) => {
+          if (delta && delta < 0) {
+            return !beforeLeave.confirm(delta);
+          } else {
+            return !beforeLeave.confirm(getSource());
+          }
+        })
+      ),
     {
       go: delta => window.history.go(delta),
       renderPath: path => `#${path}`,
@@ -133,7 +202,8 @@ export function hashIntegration() {
           return `${path}#${to}`;
         }
         return to;
-      }
+      },
+      beforeLeave
     }
   );
 }
