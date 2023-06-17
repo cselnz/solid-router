@@ -3,12 +3,12 @@
   "description": "Universal router for SolidJS (fork with blocking)",
   "author": "Ryan Carniato",
   "contributors": [
-    "Ryan Turnquist",
+  "Ryan Turnquist",
     "CSEL"
   ],
   "license": "MIT",
   "version": "0.8.2",
-  "homepage": "https://github.com/solidjs/solid-router#readme",
+  "homepage": "https://github.com/cselnz/solid-router#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/cselnz/solid-router"
