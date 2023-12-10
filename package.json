@@ -1,9 +1,10 @@
 {
-  "name": "@solidjs/router",
-  "description": "Universal router for SolidJS",
+  "name": "csel-solid-router",
+  "description": "Universal router for SolidJS (fork with blocking)",
   "author": "Ryan Carniato",
   "contributors": [
-    "Ryan Turnquist"
+    "Ryan Turnquist",
+    "CSEL"
   ],
   "license": "MIT",
   "version": "0.10.1",
